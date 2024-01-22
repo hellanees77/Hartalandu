@@ -2,8 +2,7 @@
 # coding: utf-8
 
 # In[19]:
-
-
+import mysql.connector
 import os
 import csv
 from selenium import webdriver
@@ -74,6 +73,7 @@ def extract_page_data(date, page,total_pages,target_row=0 ):
         columns = row.find_all('td')
         row_data = [column.get_text(strip=True) for column in columns] + [date]
         data.append(row_data)
+        insertdata(date,row_data,22,22)
         print(f"Adding data for row {index + 1}")
 
     return data
@@ -122,6 +122,49 @@ def click_next_page():
 
 csv_data = []
 all_data = []
+
+def connect_to_database():
+    try:
+        # Connect to MySQL
+        connection = mysql.connector.connect(
+            host="localhost",
+            user="your_username",
+            password="your_password",
+            database="your_database"
+        )
+
+        print("Connected to the database!")
+        return connection
+
+    except mysql.connector.Error as err:
+        print(f"Error: {err}")
+        return None
+
+
+def execute_query(connection, query, values=None):
+    try:
+        # Create a cursor object
+        cursor = connection.cursor()
+
+        # Execute the query with optional values
+        if values is None:
+            cursor.execute(query)
+        else:
+            cursor.execute(query, values)
+
+        # Commit the changes
+        connection.commit()
+
+        print("Query executed successfully!")
+
+    except mysql.connector.Error as err:
+        print(f"Error: {err}")
+
+    finally:
+        # Close the cursor (but keep the connection open for reuse)
+        if cursor:
+            cursor.close()
+
 
 def scrape_data_for_date_range(date_array, page_number=0,target_row=0):
 
@@ -192,9 +235,19 @@ def scrape_data_for_date_range(date_array, page_number=0,target_row=0):
 
 
 def insertdata (date,data,page_number,total_entries):
-        maximum_entries_from_db = 501
-        print(f"hello+{data[0]}")
-#         try execute the query
+    # Connect to the database
+    db_connection = connect_to_database()
+
+    if db_connection:
+        # Example query
+        insert_query = "INSERT INTO your_table_name (date, column1, column2) VALUES (%s, %s, %s)"
+
+        # Execute the query
+        execute_query(db_connection, insert_query, (data['date'], data['column1'], data['column2']))
+
+        # Close the database connection after query execution
+        db_connection.close()
+
 # if success ok
 # check first or last
 #  append to csv at end with loading status
