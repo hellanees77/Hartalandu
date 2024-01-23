@@ -83,7 +83,7 @@ def extract_page_data(date, page,total_pages,target_row=0 ):
 
 
 # Calculate the specific date (e.g., start from one week ago)
-start_date_str = '01/21/2024'
+start_date_str = '01/19/2022'
 start_date = datetime.strptime(start_date_str , '%m/%d/%Y')
 date_array = []
 
@@ -201,11 +201,12 @@ def scrape_data_for_date_range(date_array, page_number=0,target_row=0):
             # total_pages_value = total_pages_text[start_index:end_index]
             # num_pages_to_scrape = int(total_pages_value)
 
-            # Extract the total pages value from the content
-            span_element = soup.find('span', id='ctl00_ContentPlaceHolder1_PagerControl1_litRecords')
+            span_element = WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.ID, 'ctl00_ContentPlaceHolder1_PagerControl1_litRecords'))
+            )
 
             # Extract the total pages value from the content
-            total_pages_text = span_element.get_text(strip=True)
+            total_pages_text = span_element.text
             start_index = total_pages_text.find("[Total pages:") + len("[Total pages:")
             end_index = total_pages_text.find("]", start_index)
 
@@ -221,7 +222,7 @@ def scrape_data_for_date_range(date_array, page_number=0,target_row=0):
             end_index = records_text.find(" records", start_index)
 
             records_value = records_text[start_index:end_index]
-            print(f"Total Recordes: {records_value} Check This!!!")
+            print(f"Total Records: {records_value} Check This!!!")
             date_span = driver.find_element(By.ID, 'ctl00_ContentPlaceHolder1_marketDate')
             # Extract the text value from the span element
             date_value = date_span.text
