@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # coding: utf-8
+from decimal import Decimal
 
 # In[19]:
 import mysql.connector
@@ -12,6 +13,8 @@ from selenium.webdriver.support.ui import Select
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.keys import Keys
 from datetime import datetime, timedelta
+#import datetime
+#from datetime import timedelta
 import selenium.webdriver.common.keys
 import pandas as pd
 from bs4 import BeautifulSoup
@@ -128,9 +131,9 @@ def connect_to_database():
         # Connect to MySQL
         connection = mysql.connector.connect(
             host="localhost",
-            user="your_username",
-            password="your_password",
-            database="your_database"
+            user="root",
+            password="",
+            database="hartalandu_db"
         )
 
         print("Connected to the database!")
@@ -208,7 +211,17 @@ def scrape_data_for_date_range(date_array, page_number=0,target_row=0):
 
             total_pages_value = total_pages_text[start_index:end_index]
             num_pages_to_scrape = int(total_pages_value)
-            print(f"too many pages{num_pages_to_scrape}")
+            print(f"Total pages: {num_pages_to_scrape} Check This!!")
+
+            # Extract the text content of the span
+            records_text = span_element.text
+
+            # Extract the value of records using string manipulation
+            start_index = records_text.find("of ") + len("of ")
+            end_index = records_text.find(" records", start_index)
+
+            records_value = records_text[start_index:end_index]
+            print(f"Total Recordes: {records_value} Check This!!!")
             date_span = driver.find_element(By.ID, 'ctl00_ContentPlaceHolder1_marketDate')
             # Extract the text value from the span element
             date_value = date_span.text
@@ -229,24 +242,38 @@ def scrape_data_for_date_range(date_array, page_number=0,target_row=0):
                     break
 
         except Exception as e:
-            print(f"Error printing the page+date_str+{e}")
+            print(f"Error: printing the page {page_num + 1}, date_str {date_str}: {repr(e)}")
 
 
+def insertdata(date, data, page_number, total_entries):
+    # Convert the date string to the appropriate format (YYYY-MM-DD)
+     data[8]= datetime.strptime(data[8], '%m/%d/%Y').strftime('%Y-%m-%d')
+     #print(f"this is type Rate:{type(data[6])} amount:{type(data[7])}")
+     #data[6] = '{:,.2f}'.format(data[6]) # Format as a float with 2 decimal places and commas
 
 
-def insertdata (date,data,page_number,total_entries):
-    # Connect to the database
-    db_connection = connect_to_database()
+     data[6] = float(data[6].replace(",", ""))
 
-    if db_connection:
-        # Example query
-        insert_query = "INSERT INTO your_table_name (date, column1, column2) VALUES (%s, %s, %s)"
+      #data[7] = '{:,.2f}'.format(data[7])  # Format as a float with 2 decimal places and commas
 
-        # Execute the query
-        execute_query(db_connection, insert_query, (data['date'], data['column1'], data['column2']))
+
+     data[7] = Decimal(data[7].replace(",", ""))
+
+
+     data[5]= int(data[5].replace(",", ""))
+     # Connect to the database
+     db_connection = connect_to_database()
+
+     if db_connection:
+        # Example query with placeholders
+        insert_query = "INSERT INTO Hartalandu_table5 (SerialNumber, TransactionNumber, Symbol, Buyer, Seller, Quantity, Rate, Amount, Date) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)"
+
+        # Execute the query with the data list (excluding the last element and adding the formatted date)
+        execute_query(db_connection, insert_query, data)
 
         # Close the database connection after query execution
         db_connection.close()
+
 
 # if success ok
 # check first or last
@@ -254,12 +281,12 @@ def insertdata (date,data,page_number,total_entries):
 # if last replace csv with completed status
 # if duplicate unique key error
 # check the query again get the maximum value of entries and try to navigate to the certain page and insert the data after that
-        if (total_entries!= maximum_entries_from_db):
-            page = maximum_entries_from_db//500
+       #if (total_entries!= maximum_entries_from_db):
+            #page = maximum_entries_from_db//500
             # rows = maximum_entries_from_db%500
-            scrape_data_for_date_range(date_array, page_number=page,target_row=data[0])
-        else:
-            scrape_data_for_date_range(date_array.remove(date))
+            #scrape_data_for_date_range(date_array, page_number=page,target_row=data[0])
+        #else:
+            #scrape_data_for_date_range(date_array.remove(date))
 
 
 # if last page last entry than update csv to done
