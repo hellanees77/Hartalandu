@@ -18,8 +18,8 @@ from bs4 import BeautifulSoup
 
 import csv
 from datetime import datetime
-START_DATE = '01/19/2022'
-END_DATE = "01/22/2022"
+START_DATE = '01/01/2024'
+END_DATE = "01/02/2024"
 
 # Install the ChromeDriver executable and start a Chrome browser using Selenium
 driver = webdriver.Chrome()
@@ -46,8 +46,8 @@ def update_progress_csv(date, number, status):
         return
 
     # Validate the status
-    if status not in ["started", "completed"]:
-        print("Invalid status. Please provide 'started' or 'completed'.")
+    if status not in ["started", "completed","incomplete"]:
+        print("Invalid status. Please provide 'started' or 'completed' or 'incomplete'.")
         return
 
     # Read the existing CSV file if it exists; otherwise, create a new file
@@ -192,7 +192,7 @@ def get_max_value(connection, date):
         cursor.execute(query)
         result = cursor.fetchone()
         max_value = result[0]
-        print(f"max valeu is :{max_value}")
+        print(f"Max value is :{max_value}")
         return max_value
 
     except Exception as e:
@@ -277,7 +277,7 @@ def scrape_data_for_date_range(date_array_toscrap, page_number=0, target_value=0
             if (page_num != 0):
                 navigate_to_page(page_num + 1)
             for page in range(page_num, num_pages_to_scrape):
-                print(f"Scraping data from page {page_num + 1}")
+                print(f"Scraping data from page {page + 1}")
                 extract_page_data(date_str, page, records_value, num_pages_to_scrape, target_value)
 
 
@@ -339,12 +339,12 @@ def insert_data(date, data, page_number, total_entries,total_pages):
 
         try:
             execute_query(db_connection, insert_query, data)
-            if (data[0] == 1):
+            if (int(data[0]) == 1):
                 update_progress_csv(date, 1,"started")
             elif data[0] == total_entries:
                 date_array.remove(preformatted_date)
                 error_value_per_page = 5
-                total_counts =  get_total_count()
+                total_counts =  get_total_count(db_connection,data[8])
                 differences = int(total_entries) - total_counts
                 if(differences<=error_value_per_page*total_pages):
                     update_progress_csv(date,total_counts,"completed")
@@ -357,7 +357,7 @@ def insert_data(date, data, page_number, total_entries,total_pages):
             if max_values != int(total_entries):
                 page_number = max_values // 500
                 rows_value = max_values
-                print(f"came at not case page : {page_number} rows value :{rows_value}")
+                print(f"came at not case page : {page_number+1} rows value :{rows_value}")
                 duplicate = DuplicateDataException(date_array, page_number, rows_value)
                 raise duplicate
             else:
