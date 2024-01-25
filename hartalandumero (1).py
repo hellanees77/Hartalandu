@@ -276,19 +276,19 @@ def scrape_data_for_date_range(date_array_toscrap, page_number=0, target_value=0
             page_num = page_number
             if (page_num != 0):
                 navigate_to_page(page_num + 1)
-            for page in range(page_num, num_pages_to_scrape):
+            for page in range(page_num+1, num_pages_to_scrape):
                 print(f"Scraping data from page {page + 1}")
                 extract_page_data(date_str, page, records_value, num_pages_to_scrape, target_value)
-
+                navigate_to_page(page+1)
 
                 # Click the next page
-                if not click_next_page(page, num_pages_to_scrape):
-                    print("No more pages to scrape.")
-                    break
+                # if not click_next_page(page, num_pages_to_scrape):
+                #     print("No more pages to scrape.")
+                #     break
         except DuplicateDataException as duplicate:
             print("Man its duplicate entries")
             print(f"came at this place {duplicate.page_number}, {duplicate.rows_value}")
-            scrape_data_for_date_range(date_array, duplicate.page_number, duplicate.rows_value)
+            scrape_data_for_date_range(date_array, int(duplicate.page_number), duplicate.rows_value)
         except Exception as e:
             print(f"Error: printing the page , date_str {date_str}: {e}")
 
