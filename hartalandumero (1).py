@@ -18,8 +18,8 @@ from bs4 import BeautifulSoup
 
 import csv
 from datetime import datetime
-START_DATE = '01/01/2024'
-END_DATE = "01/02/2024"
+START_DATE = '01/01/2022'
+END_DATE = "01/25/2024"
 
 # Install the ChromeDriver executable and start a Chrome browser using Selenium
 driver = webdriver.Chrome()
@@ -276,10 +276,9 @@ def scrape_data_for_date_range(date_array_toscrap, page_number=0, target_value=0
             page_num = page_number
             if (page_num != 0):
                 navigate_to_page(page_num + 1)
-            for page in range(page_num+1, num_pages_to_scrape):
-                print(f"Scraping data from page {page + 1}")
+            for page in range(page_num, num_pages_to_scrape):
+                navigate_to_panavigate_to_pagege(page+1)
                 extract_page_data(date_str, page, records_value, num_pages_to_scrape, target_value)
-                navigate_to_page(page+1)
 
                 # Click the next page
                 # if not click_next_page(page, num_pages_to_scrape):
