@@ -277,7 +277,9 @@ def scrape_data_for_date_range(date_array_toscrap, page_number=0, target_value=0
             if (page_num != 0):
                 navigate_to_page(page_num + 1)
             for page in range(page_num, num_pages_to_scrape):
-                navigate_to_panavigate_to_pagege(page+1)
+                print(f"Scraping data from page {page + 1}")
+                navigate_to_page(page+1)
+
                 extract_page_data(date_str, page, records_value, num_pages_to_scrape, target_value)
 
                 # Click the next page
