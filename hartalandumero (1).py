@@ -122,16 +122,18 @@ def main():
             if target_index is not None:
                 print(f"Target row with value {target_value} found at index {target_index}.")
                 rows = rows[target_index + 1:]
+                print(f"Value of target_index:{target_index} of date:{date} and rows:{len(rows)}")
 
         # Iterate through rows starting from the specified target_row or the next row
         for index, row in enumerate(rows, start=target_index + 1 if target_index is not None else 1):
             columns = row.find_all('td')
             row_data = [column.get_text(strip=True) for column in columns] + [date]
             print("trying to insert", row_data)
+
             insert_data(date, row_data, current_page_number, total_entries, total_pages)
 
             # Rows were processed, return True
-        return target_value == 0 or target_index is not None
+        return target_value == 0 or len(rows) != 0
 
     start_date = datetime.strptime(START_DATE, '%m/%d/%Y')
     end_date = datetime.strptime(END_DATE, '%m/%d/%Y')
@@ -293,12 +295,15 @@ def main():
                     navigate_to_page(page + 1)
                     if not extract_page_data(date_str, page, records_value, num_pages_to_scrape, target_value):
                         print("came at this last index of the page")
-                        continue
+                        if page + 1 == num_pages_to_scrape:
+                            break
+                        else:
+                            continue
 
 
             except DuplicateDataException as duplicate:
                 print("Man its duplicate entries")
-                print(f"came at this place {duplicate.page_number}, {duplicate.rows_value}")
+                print(f"came at this place {duplicate.page_number + 1}, {duplicate.rows_value}")
                 scrape_data_for_date_range(date_array, int(duplicate.page_number), duplicate.rows_value)
             except Exception as e:
                 print(f"Error: printing the page , date_str {date_str}: {e}")
@@ -361,7 +366,7 @@ def main():
 
             except DuplicateDataException as duplicate:
                 max_values = get_max_value(db_connection, data[8])
-                print(f"max_values{max_values}")
+                print(f"Max_values:{max_values}")
                 if max_values != int(total_entries):
                     page_number = max_values // 500
                     rows_value = max_values
