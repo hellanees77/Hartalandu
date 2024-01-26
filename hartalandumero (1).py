@@ -105,7 +105,6 @@ def extract_page_data(date, current_page_number, total_entries, total_pages, tar
             rows = rows[target_index + 1:]
 
     # Iterate through rows starting from the specified target_row or the next row
-    if target_index is not None or rows:
         for index, row in enumerate(rows, start=target_index + 1 if target_index is not None else 1):
             columns = row.find_all('td')
             row_data = [column.get_text(strip=True) for column in columns] + [date]
@@ -113,10 +112,11 @@ def extract_page_data(date, current_page_number, total_entries, total_pages, tar
             insert_data(date, row_data, current_page_number, total_entries, total_pages)
 
             # Rows were processed, return True
-            return True
+        if not target_value == 0 and (target_index is not None or rows):
+            return False
         else:
             # No rows to process, return False
-            return False
+            return True
 
 start_date = datetime.strptime(START_DATE, '%m/%d/%Y')
 end_date = datetime.strptime(END_DATE, '%m/%d/%Y')
