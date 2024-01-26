@@ -20,7 +20,7 @@ import csv
 from datetime import datetime
 
 START_DATE = '01/01/2022'
-END_DATE = "01/02/2022"
+END_DATE = "01/05/2022"
 
 # Install the ChromeDriver executable and start a Chrome browser using Selenium
 driver = webdriver.Chrome()
@@ -105,18 +105,14 @@ def extract_page_data(date, current_page_number, total_entries, total_pages, tar
             rows = rows[target_index + 1:]
 
     # Iterate through rows starting from the specified target_row or the next row
-        for index, row in enumerate(rows, start=target_index + 1 if target_index is not None else 1):
-            columns = row.find_all('td')
-            row_data = [column.get_text(strip=True) for column in columns] + [date]
-            print("trying to insert", row_data)
-            insert_data(date, row_data, current_page_number, total_entries, total_pages)
+    for index, row in enumerate(rows, start=target_index + 1 if target_index is not None else 1):
+        columns = row.find_all('td')
+        row_data = [column.get_text(strip=True) for column in columns] + [date]
+        print("trying to insert", row_data)
+        insert_data(date, row_data, current_page_number, total_entries, total_pages)
 
             # Rows were processed, return True
-        if not target_value == 0 and (target_index is not None or rows):
-            return False
-        else:
-            # No rows to process, return False
-            return True
+    return target_value == 0 or target_index is not None
 
 start_date = datetime.strptime(START_DATE, '%m/%d/%Y')
 end_date = datetime.strptime(END_DATE, '%m/%d/%Y')
@@ -162,7 +158,7 @@ def connect_to_database():
             host="localhost",
             user="root",
             password="",
-            database="hartalpittal"
+            database="test_hartalpittal"
         )
 
         print("Connected to the database!")
