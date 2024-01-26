@@ -22,7 +22,7 @@ import sys
 
 def main():
     START_DATE = '01/05/2022'
-    END_DATE = "01/10/2022"
+    END_DATE = "01/25/2024"
 
     def get_completed_dates(csv_file_name):
         completed_dates = []
@@ -255,10 +255,11 @@ def main():
 
                 input_element.send_keys(Keys.ENTER)
 
-                search_button = WebDriverWait(driver, 10).until(
+                search_button = WebDriverWait(driver, 15).until(
                     EC.element_to_be_clickable((By.ID, 'ctl00_ContentPlaceHolder1_lbtnSearchFloorsheet')))
                 search_button.click()
                 if not has_data_onDate(date_str, driver.page_source):
+                    print(f"There is no data in this date:{date_str}")
                     continue
                 span_element = WebDriverWait(driver, 10).until(
                     EC.presence_of_element_located((By.ID, 'ctl00_ContentPlaceHolder1_PagerControl1_litRecords'))
@@ -324,6 +325,7 @@ def main():
                 return False
 
         else:
+            print("Selected date is not expected")
             return False
 
     def insert_data(date, data, page_number, total_entries, total_pages):
