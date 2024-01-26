@@ -105,12 +105,18 @@ def extract_page_data(date, current_page_number, total_entries, total_pages, tar
             rows = rows[target_index + 1:]
 
     # Iterate through rows starting from the specified target_row or the next row
-    for index, row in enumerate(rows, start=target_index + 1 if target_index is not None else 1):
-        columns = row.find_all('td')
-        row_data = [column.get_text(strip=True) for column in columns] + [date]
-        print("trying to insert", row_data)
-        insert_data(date, row_data, current_page_number, total_entries, total_pages)
+    if target_index is not None or rows:
+        for index, row in enumerate(rows, start=target_index + 1 if target_index is not None else 1):
+            columns = row.find_all('td')
+            row_data = [column.get_text(strip=True) for column in columns] + [date]
+            print("trying to insert", row_data)
+            insert_data(date, row_data, current_page_number, total_entries, total_pages)
 
+            # Rows were processed, return True
+            return True
+        else:
+            # No rows to process, return False
+            return False
 
 start_date = datetime.strptime(START_DATE, '%m/%d/%Y')
 end_date = datetime.strptime(END_DATE, '%m/%d/%Y')
@@ -273,8 +279,9 @@ def scrape_data_for_date_range(date_array_toscrap, page_number=0, target_value=0
             for page in range(page_num, num_pages_to_scrape):
                 print(f"Scraping data from page {page + 1}")
                 navigate_to_page(page + 1)
-
-                extract_page_data(date_str, page, records_value, num_pages_to_scrape, target_value)
+                if not extract_page_data(date_str, page, records_value, num_pages_to_scrape, target_value):
+                    print("came at this last index of the page")
+                    continue
 
 
         except DuplicateDataException as duplicate:
