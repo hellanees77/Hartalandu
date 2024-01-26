@@ -18,8 +18,8 @@ from bs4 import BeautifulSoup
 
 import csv
 from datetime import datetime
-START_DATE = '01/01/2022'
-END_DATE = "01/25/2024"
+START_DATE = '01/02/2022'
+END_DATE = "01/02/2022"
 
 # Install the ChromeDriver executable and start a Chrome browser using Selenium
 driver = webdriver.Chrome()
@@ -274,18 +274,14 @@ def scrape_data_for_date_range(date_array_toscrap, page_number=0, target_value=0
             date_value = date_span.text
 
             page_num = page_number
-            if (page_num != 0):
-                navigate_to_page(page_num + 1)
+
             for page in range(page_num, num_pages_to_scrape):
                 print(f"Scraping data from page {page + 1}")
                 navigate_to_page(page+1)
 
                 extract_page_data(date_str, page, records_value, num_pages_to_scrape, target_value)
 
-                # Click the next page
-                # if not click_next_page(page, num_pages_to_scrape):
-                #     print("No more pages to scrape.")
-                #     break
+
         except DuplicateDataException as duplicate:
             print("Man its duplicate entries")
             print(f"came at this place {duplicate.page_number}, {duplicate.rows_value}")
@@ -367,9 +363,11 @@ def insert_data(date, data, page_number, total_entries,total_pages):
                 differences = int(total_entries) - total_counts
                 if differences <= error_value_per_page * total_pages:
                     update_progress_csv(date, total_counts, "completed")
+                    date_array.remove(preformatted_date)
+
                 else:
                     update_progress_csv(date, total_counts, "incomplete")
-                date_array.remove(preformatted_date)
+                    date_array.remove(preformatted_date)
                 duplicate = DuplicateDataException(date_array, 0, 0)
                 raise duplicate
 
