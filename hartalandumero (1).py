@@ -18,7 +18,8 @@ from bs4 import BeautifulSoup
 
 import csv
 from datetime import datetime
-START_DATE = '01/02/2022'
+
+START_DATE = '01/01/2022'
 END_DATE = "01/02/2022"
 
 # Install the ChromeDriver executable and start a Chrome browser using Selenium
@@ -37,6 +38,7 @@ class DuplicateDataException(Exception):
         self.rows_value = rows_value
         super().__init__()
 
+
 def update_progress_csv(date, number, status):
     # Input validation: Check if the date is in the correct format
     try:
@@ -46,7 +48,7 @@ def update_progress_csv(date, number, status):
         return
 
     # Validate the status
-    if status not in ["started", "completed","incomplete"]:
+    if status not in ["started", "completed", "incomplete"]:
         print("Invalid status. Please provide 'started' or 'completed' or 'incomplete'.")
         return
 
@@ -85,7 +87,7 @@ def update_progress_csv(date, number, status):
         print("CSV file created successfully.")
 
 
-def extract_page_data(date, current_page_number, total_entries,total_pages ,target_value=0,):
+def extract_page_data(date, current_page_number, total_entries, total_pages, target_value=0, ):
     # Let's use BeautifulSoup to parse the page source
     soup = BeautifulSoup(driver.page_source, 'html.parser')
 
@@ -107,9 +109,7 @@ def extract_page_data(date, current_page_number, total_entries,total_pages ,targ
         columns = row.find_all('td')
         row_data = [column.get_text(strip=True) for column in columns] + [date]
         print("trying to insert", row_data)
-        insert_data(date, row_data, current_page_number, total_entries,total_pages)
-
-
+        insert_data(date, row_data, current_page_number, total_entries, total_pages)
 
 
 start_date = datetime.strptime(START_DATE, '%m/%d/%Y')
@@ -133,8 +133,6 @@ while start_date <= end_date:
 print(date_array)
 
 
-
-
 def click_next_page(pages_num, number_of_pages):
     try:
         # Find the next page element and click it
@@ -149,6 +147,7 @@ def click_next_page(pages_num, number_of_pages):
             navigate_to_page(pages_num + 1)
             return True
         return False
+
 
 def connect_to_database():
     try:
@@ -167,6 +166,7 @@ def connect_to_database():
         print(f"Error connections: {err}")
         return None
 
+
 def get_total_count(connection, date):
     cursor = connection.cursor()
     query = f"SELECT COUNT(*) AS total_entries FROM Hartalandu_table5 WHERE Date = '{date}'"
@@ -184,7 +184,6 @@ def get_total_count(connection, date):
 
 
 def get_max_value(connection, date):
-
     cursor = connection.cursor()
     query = f"SELECT MAX(SerialNumber) AS MaxSerialNumber FROM Hartalandu_table5 WHERE Date = '{date}'"
     print(query)
@@ -198,7 +197,6 @@ def get_max_value(connection, date):
     except Exception as e:
         print(f"Max value Exception: {e}")
         return 0;
-
 
 
 def execute_query(connection, query, values=None):
@@ -228,7 +226,6 @@ def execute_query(connection, query, values=None):
 
 
 def scrape_data_for_date_range(date_array_toscrap, page_number=0, target_value=0):
-
     for date_str in date_array_toscrap:
         try:
             print(f"Getting data from {date_str}")
@@ -239,15 +236,13 @@ def scrape_data_for_date_range(date_array_toscrap, page_number=0, target_value=0
             input_element.clear()
             input_element.send_keys(date_str)
 
-
             input_element.send_keys(Keys.ENTER)
 
             search_button = WebDriverWait(driver, 10).until(
                 EC.element_to_be_clickable((By.ID, 'ctl00_ContentPlaceHolder1_lbtnSearchFloorsheet')))
             search_button.click()
-            if not  has_data_onDate(date_str,driver.page_source):
-                date_array.remove(date_str)
-
+            if not has_data_onDate(date_str, driver.page_source):
+                continue
             span_element = WebDriverWait(driver, 10).until(
                 EC.presence_of_element_located((By.ID, 'ctl00_ContentPlaceHolder1_PagerControl1_litRecords'))
             )
@@ -277,7 +272,7 @@ def scrape_data_for_date_range(date_array_toscrap, page_number=0, target_value=0
 
             for page in range(page_num, num_pages_to_scrape):
                 print(f"Scraping data from page {page + 1}")
-                navigate_to_page(page+1)
+                navigate_to_page(page + 1)
 
                 extract_page_data(date_str, page, records_value, num_pages_to_scrape, target_value)
 
@@ -301,7 +296,7 @@ def navigate_to_page(desired_page):
     )
 
 
-def has_data_onDate(expected_date,page_source):
+def has_data_onDate(expected_date, page_source):
     soup = BeautifulSoup(page_source, 'html.parser')
     input_element = soup.find('input', {'id': 'ctl00_ContentPlaceHolder1_txtFloorsheetDateFilter'})
     selected_date = input_element.get('value')
@@ -316,8 +311,7 @@ def has_data_onDate(expected_date,page_source):
         return False
 
 
-
-def insert_data(date, data, page_number, total_entries,total_pages):
+def insert_data(date, data, page_number, total_entries, total_pages):
     preformatted_date = data[8]
     # Convert the date string to the appropriate format (YYYY-MM-DD)
     data[8] = datetime.strptime(data[8], '%m/%d/%Y').strftime('%Y-%m-%d')
@@ -337,16 +331,16 @@ def insert_data(date, data, page_number, total_entries,total_pages):
         try:
             execute_query(db_connection, insert_query, data)
             if (int(data[0]) == 1):
-                update_progress_csv(date, 1,"started")
+                update_progress_csv(date, 1, "started")
             elif data[0] == total_entries:
                 date_array.remove(preformatted_date)
                 error_value_per_page = 5
-                total_counts =  get_total_count(db_connection,data[8])
+                total_counts = get_total_count(db_connection, data[8])
                 differences = int(total_entries) - total_counts
-                if(differences<=error_value_per_page*total_pages):
-                    update_progress_csv(date,total_counts,"completed")
+                if (differences <= error_value_per_page * total_pages):
+                    update_progress_csv(date, total_counts, "completed")
                 else:
-                    update_progress_csv(date,total_counts,"incomplete")
+                    update_progress_csv(date, total_counts, "incomplete")
 
         except DuplicateDataException as duplicate:
             max_values = get_max_value(db_connection, data[8])
@@ -354,12 +348,12 @@ def insert_data(date, data, page_number, total_entries,total_pages):
             if max_values != int(total_entries):
                 page_number = max_values // 500
                 rows_value = max_values
-                print(f"came at not case page : {page_number+1} rows value :{rows_value}")
+                print(f"came at not case page : {page_number + 1} rows value :{rows_value}")
                 duplicate = DuplicateDataException(date_array, page_number, rows_value)
                 raise duplicate
             else:
                 error_value_per_page = 5
-                total_counts = get_total_count(db_connection,data[8])
+                total_counts = get_total_count(db_connection, data[8])
                 differences = int(total_entries) - total_counts
                 if differences <= error_value_per_page * total_pages:
                     update_progress_csv(date, total_counts, "completed")
@@ -374,8 +368,6 @@ def insert_data(date, data, page_number, total_entries,total_pages):
         db_connection.close()
 
 
-
 scrape_data_for_date_range(date_array)
 
 driver.quit()
-
