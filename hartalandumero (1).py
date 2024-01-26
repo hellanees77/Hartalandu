@@ -19,8 +19,8 @@ from bs4 import BeautifulSoup
 import csv
 from datetime import datetime
 
-START_DATE = '01/01/2022'
-END_DATE = "01/05/2022"
+START_DATE = '01/05/2022'
+END_DATE = "01/10/2022"
 
 # Install the ChromeDriver executable and start a Chrome browser using Selenium
 driver = webdriver.Chrome()
@@ -336,7 +336,7 @@ def insert_data(date, data, page_number, total_entries, total_pages):
             if (int(data[0]) == 1):
                 update_progress_csv(date, 1, "started")
             elif data[0] == total_entries:
-                date_array.remove(preformatted_date)
+                #date_array.remove(preformatted_date)
                 error_value_per_page = 5
                 total_counts = get_total_count(db_connection, data[8])
                 differences = int(total_entries) - total_counts
