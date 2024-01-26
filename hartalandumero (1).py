@@ -158,7 +158,7 @@ def connect_to_database():
             host="localhost",
             user="root",
             password="",
-            database="test_hartalpittal"
+            database="hartalpittal"
         )
 
         print("Connected to the database!")
