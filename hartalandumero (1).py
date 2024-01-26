@@ -152,8 +152,8 @@ def main():
         start_date += timedelta(days=1)
 
     completed_dates = get_completed_dates("progress.csv")
-    date_array = remove_completed_dates(original_dates, completed_dates)
-    print(date_array)
+    date_array = remove_completed_dates(date_array, completed_dates)
+    print("This is date array-----------",date_array)
 
     def click_next_page(pages_num, number_of_pages):
         try:
