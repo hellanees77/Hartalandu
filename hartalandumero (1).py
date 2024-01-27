@@ -21,7 +21,7 @@ import time
 import sys
 
 def main():
-    START_DATE = '03/23/2022'
+    START_DATE = '01/24/2022'
     END_DATE = "01/25/2024"
 
     def get_completed_dates(csv_file_name):
@@ -53,18 +53,21 @@ def main():
     file_name = "progress.csv"
 
     class DuplicateDataException(Exception):
-        def __init__(self, date_array=None, page_number=None, rows_value=None):
+        def __init__(self, date_array=None, page_number=None, rows_value=None,actual_total_counts=None):
             self.date_array = date_array
             self.page_number = page_number
             self.rows_value = rows_value
+            self.actual_total_counts = actual_total_counts
             super().__init__()
 
     class FaultLastIndexException(Exception):
-        def __init__(self, date_array=None, page_number=None, date=None, last_entry=None):
+        def __init__(self, date_array=None, total_pages=None, date=None, last_entry=None, actual_total_count= None,total_counts_web = None):
             self.date_array = date_array
-            self.page_number = page_number
+            self.total_pages = total_pages
             self.date = date
             self.last_entry = last_entry
+            self.actual_total_count = actual_total_count
+            self.total_counts_web = total_counts_web
             super().__init__()
 
     def update_progress_csv(date, number, status):
@@ -76,8 +79,8 @@ def main():
             return
 
         # Validate the status
-        if status not in ["started", "completed", "incomplete", "default incomplete"]:
-            print("Invalid status. Please provide 'started' or 'completed' or 'incomplete' or 'default incomplete'.")
+        if status not in ["started", "completed", "incomplete"]:
+            print("Invalid status. Please provide 'started' or 'completed' or 'incomplete' ")
             return
 
         # Read the existing CSV file if it exists; otherwise, create a new file
@@ -114,7 +117,7 @@ def main():
 
             print("CSV file created successfully.")
 
-    def extract_page_data(date, current_page_number, total_entries, total_pages, target_value=0, ):
+    def extract_page_data(date, current_page_number, total_entries, total_pages, target_value=0, actual_total_cunts=None,total_counts_web=None):
         # Let's use BeautifulSoup to parse the page source
         soup = BeautifulSoup(driver.page_source, 'html.parser')
 
@@ -140,8 +143,8 @@ def main():
 
             insert_data(date, row_data, current_page_number, total_entries, total_pages)
         if not (target_value == 0 or len(rows) != 0):
-           faultException = FaultLastIndexException(date_array,current_page_number,date,target_value)
-           raise faultException
+            faultException = FaultLastIndexException(date_array,total_pages,date,target_value,actual_total_cunts,total_counts_web)
+            raise faultException
             # Rows were processed, return True
         return target_value == 0 or len(rows) != 0
 
@@ -254,7 +257,7 @@ def main():
             if cursor:
                 cursor.close()
 
-    def scrape_data_for_date_range(date_array_toscrap, page_number=0, target_value=0):
+    def scrape_data_for_date_range(date_array_toscrap, page_number=0, target_value=0,actual_count=None):
         for date_str in date_array_toscrap:
             try:
                 print(f"Getting data from {date_str}")
@@ -303,7 +306,7 @@ def main():
                 for page in range(page_num, num_pages_to_scrape):
                     print(f"Scraping data from page {page + 1}")
                     navigate_to_page(page + 1)
-                    if not extract_page_data(date_str, page, records_value, num_pages_to_scrape, target_value):
+                    if not extract_page_data(date_str, page, records_value, num_pages_to_scrape, target_value,actual_count,int(records_value)):
                         page_num = 0
                         print(f"came at this last index of the page on Date:{date_str}")
                         if page + 1 == num_pages_to_scrape:
@@ -315,14 +318,20 @@ def main():
             except DuplicateDataException as duplicate:
                 print("Man its duplicate entries")
                 print(f"came at this place {duplicate.page_number + 1}, {duplicate.rows_value}")
-                scrape_data_for_date_range(duplicate.date_array, int(duplicate.page_number), duplicate.rows_value)
+                scrape_data_for_date_range(duplicate.date_array, int(duplicate.page_number), duplicate.rows_value,duplicate.actual_total_counts)
 
             except FaultLastIndexException as duplicate:
                 print("Man its Fault entries")
-                print(f"came at this place {duplicate.page_number + 1}, {duplicate.date}")
-                update_progress_csv(duplicate.date, duplicate.last_entry, 'default incomplete')
+                print(f"came at this place {duplicate.date}")
+                # update_progress_csv(duplicate.date, duplicate.last_entry, 'default incomplete')
                 new_date_array = duplicate.date_array
                 new_date_array.remove(duplicate.date)
+                error_value_per_page = 5
+                differences = duplicate.total_counts_web - duplicate.actual_total_count
+                if differences <= error_value_per_page * duplicate.total_pages:
+                    update_progress_csv(duplicate.date, duplicate.actual_total_count, "completed")
+                else:
+                    update_progress_csv(duplicate.date, duplicate.actual_total_count, "incomplete")
 
                 scrape_data_for_date_range(new_date_array)
 
@@ -394,8 +403,9 @@ def main():
                     print(f"came at not case page : {page_number + 1} rows value :{rows_value}")
                     new_date_array = date_array.copy()
                     new_date_array.insert(0,date)
+                    total_counts = get_total_count(db_connection, data[8])
                     #print("This is date_array in insert_data function-----:",date_array)
-                    duplicate = DuplicateDataException(new_date_array, page_number, rows_value)
+                    duplicate = DuplicateDataException(new_date_array, page_number, rows_value,total_counts)
                     raise duplicate
                 else:
                     error_value_per_page = 5
@@ -425,7 +435,7 @@ if __name__ == "__main__":
         except Exception as e:
             # Optionally, you can log the error to a file or another service
             time.sleep(5)  # Add a delay before restarting
-            print("Restarting the program...")
+            print(f"Restarting the program... {e}")
             continue
         except KeyboardInterrupt:
             print("Program terminated by user.")
