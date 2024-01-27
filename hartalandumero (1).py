@@ -21,7 +21,7 @@ import time
 import sys
 
 def main():
-    START_DATE = '01/05/2022'
+    START_DATE = '03/23/2022'
     END_DATE = "01/25/2024"
 
     def get_completed_dates(csv_file_name):
@@ -59,6 +59,14 @@ def main():
             self.rows_value = rows_value
             super().__init__()
 
+    class FaultLastIndexException(Exception):
+        def __init__(self, date_array=None, page_number=None, date=None, last_entry=None):
+            self.date_array = date_array
+            self.page_number = page_number
+            self.date = date
+            self.last_entry = last_entry
+            super().__init__()
+
     def update_progress_csv(date, number, status):
         # Input validation: Check if the date is in the correct format
         try:
@@ -68,8 +76,8 @@ def main():
             return
 
         # Validate the status
-        if status not in ["started", "completed", "incomplete"]:
-            print("Invalid status. Please provide 'started' or 'completed' or 'incomplete'.")
+        if status not in ["started", "completed", "incomplete", "default incomplete"]:
+            print("Invalid status. Please provide 'started' or 'completed' or 'incomplete' or 'default incomplete'.")
             return
 
         # Read the existing CSV file if it exists; otherwise, create a new file
@@ -131,7 +139,9 @@ def main():
             print("trying to insert", row_data)
 
             insert_data(date, row_data, current_page_number, total_entries, total_pages)
-
+        if not (target_value == 0 or len(rows) != 0):
+           faultException = FaultLastIndexException(date_array,current_page_number,date,target_value)
+           raise faultException
             # Rows were processed, return True
         return target_value == 0 or len(rows) != 0
 
@@ -294,7 +304,8 @@ def main():
                     print(f"Scraping data from page {page + 1}")
                     navigate_to_page(page + 1)
                     if not extract_page_data(date_str, page, records_value, num_pages_to_scrape, target_value):
-                        print("came at this last index of the page")
+                        page_num = 0
+                        print(f"came at this last index of the page on Date:{date_str}")
                         if page + 1 == num_pages_to_scrape:
                             break
                         else:
@@ -304,7 +315,17 @@ def main():
             except DuplicateDataException as duplicate:
                 print("Man its duplicate entries")
                 print(f"came at this place {duplicate.page_number + 1}, {duplicate.rows_value}")
-                scrape_data_for_date_range(date_array, int(duplicate.page_number), duplicate.rows_value)
+                scrape_data_for_date_range(duplicate.date_array, int(duplicate.page_number), duplicate.rows_value)
+
+            except FaultLastIndexException as duplicate:
+                print("Man its Fault entries")
+                print(f"came at this place {duplicate.page_number + 1}, {duplicate.date}")
+                update_progress_csv(duplicate.date, duplicate.last_entry, 'default incomplete')
+                new_date_array = duplicate.date_array
+                new_date_array.remove(duplicate.date)
+
+                scrape_data_for_date_range(new_date_array)
+
             except Exception as e:
                 print(f"Error: printing the page , date_str {date_str}: {e}")
 
@@ -371,7 +392,10 @@ def main():
                     page_number = max_values // 500
                     rows_value = max_values
                     print(f"came at not case page : {page_number + 1} rows value :{rows_value}")
-                    duplicate = DuplicateDataException(date_array, page_number, rows_value)
+                    new_date_array = date_array.copy()
+                    new_date_array.insert(0,date)
+                    #print("This is date_array in insert_data function-----:",date_array)
+                    duplicate = DuplicateDataException(new_date_array, page_number, rows_value)
                     raise duplicate
                 else:
                     error_value_per_page = 5
