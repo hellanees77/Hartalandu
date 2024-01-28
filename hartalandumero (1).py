@@ -40,6 +40,8 @@ def main():
 
         return completed_dates
 
+
+
     def remove_completed_dates(original_dates, completed_dates):
         filtered_dates = [date for date in original_dates if date not in completed_dates]
         return filtered_dates
@@ -152,6 +154,7 @@ def main():
     end_date = datetime.strptime(END_DATE, '%m/%d/%Y')
 
     date_array = []
+    blank_date_array = []
 
     # Get the current date
 
@@ -275,6 +278,7 @@ def main():
                 search_button.click()
                 if not has_data_onDate(date_str, driver.page_source):
                     print(f"There is no data in this date:{date_str}")
+                    blank_date_array.append(date_str)
                     continue
                 span_element = WebDriverWait(driver, 10).until(
                     EC.presence_of_element_located((By.ID, 'ctl00_ContentPlaceHolder1_PagerControl1_litRecords'))
@@ -318,14 +322,16 @@ def main():
             except DuplicateDataException as duplicate:
                 print("Man its duplicate entries")
                 print(f"came at this place {duplicate.page_number + 1}, {duplicate.rows_value}")
-                scrape_data_for_date_range(duplicate.date_array, int(duplicate.page_number), duplicate.rows_value,duplicate.actual_total_counts)
+                refined_date = remove_completed_dates(duplicate.date_array,blank_date_array)
+                scrape_data_for_date_range(refined_date, int(duplicate.page_number), duplicate.rows_value,duplicate.actual_total_counts)
 
             except FaultLastIndexException as duplicate:
                 print("Man its Fault entries")
                 print(f"came at this place {duplicate.date}")
                 # update_progress_csv(duplicate.date, duplicate.last_entry, 'default incomplete')
                 new_date_array = duplicate.date_array
-                new_date_array.remove(duplicate.date)
+                remove_if_present(new_date_array,duplicate.date)
+                refined_date = remove_completed_dates(new_date_array,blank_date_array)
                 error_value_per_page = 5
                 differences = duplicate.total_counts_web - duplicate.actual_total_count
                 if differences <= error_value_per_page * duplicate.total_pages:
@@ -333,10 +339,17 @@ def main():
                 else:
                     update_progress_csv(duplicate.date, duplicate.actual_total_count, "incomplete")
 
-                scrape_data_for_date_range(new_date_array)
+                scrape_data_for_date_range(refined_date)
 
             except Exception as e:
                 print(f"Error: printing the page , date_str {date_str}: {e}")
+
+    def remove_if_present(my_list, element):
+        if element in my_list:
+            my_list.remove(element)
+            print(f"{element} removed from the list.")
+        else:
+            print(f"{element} is not present in the list.")
 
     def navigate_to_page(desired_page):
         # Execute the JavaScript function to change the page index to the desired page
@@ -413,11 +426,11 @@ def main():
                     differences = int(total_entries) - total_counts
                     if differences <= error_value_per_page * total_pages:
                         update_progress_csv(date, total_counts, "completed")
-                        date_array.remove(preformatted_date)
+                        remove_if_present(date_array,preformatted_date)
 
                     else:
                         update_progress_csv(date, total_counts, "incomplete")
-                        date_array.remove(preformatted_date)
+                        remove_if_present(date_array,preformatted_date)
                     duplicate = DuplicateDataException(date_array, 0, 0)
                     raise duplicate
 
