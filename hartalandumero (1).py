@@ -21,8 +21,8 @@ import time
 import sys
 
 def main():
-    START_DATE = '01/24/2022'
-    END_DATE = "01/25/2024"
+    START_DATE = '09/21/2023'
+    END_DATE = "01/28/2024"
 
     def get_completed_dates(csv_file_name):
         completed_dates = []
@@ -127,6 +127,7 @@ def main():
         data = []
         rows = soup.select('.table-bordered tbody tr')
         # Find the index of the row with the target value
+        print(f"Total pages:{total_pages}, Current Page:{current_page_number}")
 
         target_index = None
         if target_value != 0:
@@ -145,8 +146,10 @@ def main():
 
             insert_data(date, row_data, current_page_number, total_entries, total_pages)
         if not (target_value == 0 or len(rows) != 0):
-            faultException = FaultLastIndexException(date_array,total_pages,date,target_value,actual_total_cunts,total_counts_web)
-            raise faultException
+            if current_page_number + 1 == total_pages:
+             faultException = FaultLastIndexException(date_array,total_pages,date,target_value,actual_total_cunts,total_counts_web)
+             raise faultException
+             print(f"Target value:{target_value} Length Rows:{len(rows)}")
             # Rows were processed, return True
         return target_value == 0 or len(rows) != 0
 
@@ -314,8 +317,10 @@ def main():
                         page_num = 0
                         print(f"came at this last index of the page on Date:{date_str}")
                         if page + 1 == num_pages_to_scrape:
+                            print("This is Equal case-------")
                             break
                         else:
+                            print("This is unequal case--------")
                             continue
 
 
