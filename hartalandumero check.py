@@ -83,6 +83,7 @@ def main():
         print(f"Total Records: {records_value} Check This!!!")
         if int(records_value) - int(row[1]) > 480:
             update_row(filename, row, "failed")
+            break
 
         else:
             update_row(filename, row, "passed")
