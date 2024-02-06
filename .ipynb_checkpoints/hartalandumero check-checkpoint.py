@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 from decimal import Decimal
 
 import mysql.connector
@@ -24,47 +26,25 @@ def main():
 
     def get_unverified_rows(filename):
         unverified_rows = []
-        try:
-            with open(filename, 'r') as file:
-                csv_reader = csv.reader(file)
-                # next(csv_reader)  # Skip the header if present
-                print("here is csv reader")
 
-                for row in csv_reader:
-                    # print(f"Here is total row:{len(row)}")
-                    date, value, status, verification = row
-                    if verification.lower() == 'unverified':
-                        unverified_rows.append(row)
-        except Exception as e:
-            print(f"The error is:{e}")
-        print(f"this is unverified length -----{len(unverified_rows)}")
+        with open(filename, 'r') as file:
+            csv_reader = csv.reader(file)
+            next(csv_reader)  # Skip the header if present
+
+            for row in csv_reader:
+                date, value, status, verification = row
+                if verification.lower() == 'unverified':
+                    unverified_rows.append(row)
 
         return unverified_rows
 
-    def update_row(filename, condition_row, new_status):
-        with open(filename, 'r') as file:
-            rows = list(csv.reader(file))
-
-        with open(filename, 'w', newline='') as file:
-            csv_writer = csv.writer(file)
-
-            for row in rows:
-                if row == condition_row:
-                    # Update the verification status
-                    row[3] = new_status
-                csv_writer.writerow(row)
-
-
-
-                # Install the ChromeDriver executable and start a Chrome browser using Selenium
-
+    # Install the ChromeDriver executable and start a Chrome browser using Selenium
     driver = webdriver.Chrome()
 
     # Navigate to the webpage
     driver.get('https://merolagani.com/Floorsheet.aspx')
     filename = 'progress.csv'
     unverified_rows = get_unverified_rows(filename)
-    print("Unverified row", unverified_rows)
     for row in unverified_rows:
         # Find the input element by its ID
         input_element = WebDriverWait(driver, 10).until(
@@ -77,6 +57,8 @@ def main():
         search_button = WebDriverWait(driver, 15).until(
             EC.element_to_be_clickable((By.ID, 'ctl00_ContentPlaceHolder1_lbtnSearchFloorsheet')))
         search_button.click()
+        if not has_data_onDate(date_str, driver.page_source):
+            continue
         span_element = WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.ID, 'ctl00_ContentPlaceHolder1_PagerControl1_litRecords'))
         )
@@ -105,6 +87,22 @@ def main():
 
         else:
             update_row(filename, row, "passed")
+
+    def update_row(filenames, row_value, status):
+        updated_rows = []
+        with open(filenames, 'r') as file:
+            csv_reader = csv.reader(file)
+            header = next(csv_reader)  # Save the header
+            updated_rows.append(header)
+            for row_value in csv_reader:
+                if row_value == target_row:
+                    # Update the verification status
+                    row_value[3] = status
+                    updated_rows.append(row_value)
+
+            with open(filenames, 'w', newline='') as file:
+                csv_writer = csv.writer(file)
+                csv_writer.writerows(updated_rows)
 
     driver.quit()
 
