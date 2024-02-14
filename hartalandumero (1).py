@@ -21,8 +21,8 @@ import time
 import sys
 
 def main():
-    START_DATE = '08/05/2021'
-    END_DATE = '02/05/2024'
+    START_DATE = '02/06/2024'
+    END_DATE = '02/06/2024'
 
     def get_completed_dates(csv_file_name):
         completed_dates = []
